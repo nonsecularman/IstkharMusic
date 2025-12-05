@@ -4,52 +4,50 @@ from pyrogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     CallbackQuery,
-    User
+    User,
+    ChatPrivileges
 )
-from pyrogram.enums import ParseMode, ChatMemberStatus, ChatMembersFilter
-
+from pyrogram.enums import ParseMode
 from IstkharMusic import app
 from IstkharMusic.utils.database import is_on_off
 from config import LOGGER_ID as LOG_GROUP_ID
 
-import asyncio
 
 async def play_logs(message: Message, streamtype: str):
-    """
-    Logs play actions to the log group if logging is enabled.
-    """
 
-    # Check if logging (mode 2) is enabled via DB
+    # Check if logging mode is enabled
     if not await is_on_off(2):
         return
 
+    # --- Chat members count ---
     try:
-        # Total chat members
         chat_members = await app.get_chat_members_count(message.chat.id)
-
-        # Find the group owner
-        owner_name = "Hidden / Deleted"
-        owner_id = "Hidden / Deleted"
-
-        async for admin in app.get_chat_members(
-            message.chat.id,
-            filter=ChatMembersFilter.ADMINISTRATORS
-        ):
-            if admin.status == ChatMemberStatus.OWNER:
-                if admin.user:
-                    owner_name = getattr(admin.user, "mention", owner_name)
-                    owner_id = getattr(admin.user, "id", owner_id)
-
-    except Exception:
+    except:
         chat_members = "N/A"
 
-    # Extract searched query
+    # --- Get Owner ---
+    owner_name = "Hidden / Deleted"
+    owner_id = "Hidden / Deleted"
+
+    try:
+        async for admin in app.get_chat_members(
+            message.chat.id,
+            filter=enums.ChatMembersFilter.ADMINISTRATORS
+        ):
+            if admin.status == enums.ChatMemberStatus.OWNER:
+                if admin.user:
+                    owner_name = admin.user.mention
+                    owner_id = admin.user.id
+    except:
+        pass
+
+    # --- Extract Searched Query ---
     try:
         query = message.text.split(None, 1)[1]
     except:
         query = "Unknown"
 
-    # Build log text
+    # --- Build Log Text ---
     logger_text = f"""
 <b>{app.mention} ᴘʟᴀʏ ʟᴏɢ</b>
 ╔════❰𝐏𝐋𝐀𝐘𝐈𝐍𝐆❱═══❍⊱❁۪۪
@@ -65,7 +63,7 @@ async def play_logs(message: Message, streamtype: str):
 ╚═══❰ #𝐍𝐞𝐰𝐒𝐨𝐧𝐠 ❱══❍⊱❁۪۪
 """
 
-    # Send to log group if not same chat
+    # --- Send To Log Group ---
     if message.chat.id != LOG_GROUP_ID:
         try:
             await app.send_message(
@@ -74,7 +72,5 @@ async def play_logs(message: Message, streamtype: str):
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True,
             )
-        except Exception:
+        except:
             pass
-
-    return
