@@ -27,3 +27,5 @@ youtube-search-python
 
 # Required for your bot
 pyrogram==2.0.106
+tgcrypto
+
