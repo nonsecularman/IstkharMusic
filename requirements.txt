@@ -20,7 +20,6 @@ requests
 speedtest-cli
 spotipy
 unidecode
-uvloop; sys_platform != "win32"
 yt-dlp
 youtube-search
 youtube-search-python
@@ -28,4 +27,5 @@ youtube-search-python
 # Required for your bot
 pyrogram==2.0.106
 tgcrypto
+
 
