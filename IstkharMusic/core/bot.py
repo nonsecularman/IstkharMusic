@@ -30,11 +30,13 @@ class Istkhar(Client):
 
     async def start(self):
         await super().start()
+
         self.id = self.me.id
         self.name = self.me.first_name
         self.username = self.me.username
         self.mention = self.me.mention
 
+        # ===== SAFE LOG GROUP HANDLING =====
         try:
             await self.send_message(
                 chat_id=config.LOG_GROUP_ID,
@@ -45,24 +47,32 @@ class Istkhar(Client):
                     f"ᴜsᴇʀɴᴀᴍᴇ : @{self.username}"
                 ),
             )
-        except (errors.ChannelInvalid, errors.PeerIdInvalid):
+        except (errors.ChannelInvalid, errors.PeerIdInvalid) as e:
             LOGGER(__name__).error(
-                "Bot has failed to access the log group/channel. "
-                "Make sure that you have added your bot to your log group/channel."
+                "Log group/channel access failed (invalid ID or bot not added)."
             )
-            exit()
-        except Exception as ex:
-            LOGGER(__name__).error(
-                f"Bot has failed to access the log group/channel.\nReason : {type(ex).__name__}."
-            )
-            exit()
+            LOGGER(__name__).error(f"Reason: {type(e).__name__}")
+            LOGGER(__name__).error("Continuing WITHOUT log group to avoid crash.")
 
-        a = await self.get_chat_member(config.LOG_GROUP_ID, self.id)
-        if a.status != ChatMemberStatus.ADMINISTRATOR:
+        except Exception as e:
             LOGGER(__name__).error(
-                "Please promote your bot as an admin in your log group/channel."
+                "Unexpected error while accessing log group/channel."
             )
-            exit()
+            LOGGER(__name__).error(f"Reason: {type(e).__name__}")
+            LOGGER(__name__).error("Continuing WITHOUT log group to avoid crash.")
+
+        # ===== ADMIN CHECK (SAFE) =====
+        try:
+            member = await self.get_chat_member(config.LOG_GROUP_ID, self.id)
+            if member.status != ChatMemberStatus.ADMINISTRATOR:
+                LOGGER(__name__).warning(
+                    "Bot is not admin in log group. Logging may not work."
+                )
+        except Exception as e:
+            LOGGER(__name__).warning(
+                "Failed to verify admin status in log group."
+            )
+            LOGGER(__name__).warning(f"Reason: {type(e).__name__}")
 
         LOGGER(__name__).info(f"Music Bot Started as {self.name}")
 
